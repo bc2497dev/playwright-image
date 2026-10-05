@@ -61,13 +61,25 @@
             border: 1px solid #ddd;
             border-radius: 8px;
             font-size: 14px;
-            margin-bottom: 16px;
+            margin-bottom: 4px;
             outline: none;
             transition: border-color .2s
         }
 
+        input[type=text].ok {
+            border-color: #16a34a
+        }
+
+        input[type=text].error {
+            border-color: #ef4444
+        }
+
         input:focus {
             border-color: #4f46e5
+        }
+
+        .mb {
+            margin-bottom: 16px
         }
 
         .row {
@@ -79,10 +91,49 @@
             flex: 1
         }
 
+        /* Campo contraseña con ojito */
+        .password-wrap {
+            position: relative;
+            margin-bottom: 16px
+        }
+
+        .password-wrap input {
+            width: 100%;
+            padding: 10px 40px 10px 14px;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            font-size: 14px;
+            outline: none;
+            transition: border-color .2s;
+            margin-bottom: 0
+        }
+
+        .password-wrap input:focus {
+            border-color: #4f46e5
+        }
+
+        .btn-ojo {
+            position: absolute;
+            right: 12px;
+            top: 50%;
+            transform: translateY(-50%);
+            background: none;
+            border: none;
+            cursor: pointer;
+            font-size: 16px;
+            color: #888;
+            padding: 0;
+            line-height: 1
+        }
+
+        .btn-ojo:hover {
+            color: #444
+        }
+
         .carpeta-row {
             display: flex;
             gap: 10px;
-            margin-bottom: 16px;
+            margin-bottom: 4px;
             align-items: center
         }
 
@@ -106,11 +157,85 @@
             background: #e0e0e0
         }
 
+        .hint {
+            font-size: 12px;
+            color: #888;
+            margin-bottom: 6px;
+            line-height: 1.5
+        }
+
+        .hint-ok {
+            font-size: 12px;
+            color: #16a34a;
+            margin-bottom: 16px;
+            font-weight: 600
+        }
+
+        .hint-err {
+            font-size: 12px;
+            color: #ef4444;
+            margin-bottom: 16px;
+            font-weight: 600
+        }
+
+        .instrucciones {
+            background: #f8f9fa;
+            border: 1px solid #e5e7eb;
+            border-radius: 8px;
+            padding: 16px;
+            margin-bottom: 16px;
+            font-size: 13px;
+            line-height: 1.7;
+            color: #444
+        }
+
+        .instrucciones strong {
+            color: #1a1a2e
+        }
+
+        .instrucciones code {
+            background: #e5e7eb;
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-family: 'Courier New', monospace;
+            font-size: 12px
+        }
+
+        .tabs {
+            display: flex;
+            gap: 8px;
+            margin-bottom: 12px
+        }
+
+        .tab {
+            padding: 6px 16px;
+            border-radius: 6px;
+            border: 1px solid #ddd;
+            cursor: pointer;
+            font-size: 13px;
+            font-weight: 600;
+            background: #fff;
+            color: #666;
+            transition: all .2s
+        }
+
+        .tab.active {
+            background: #4f46e5;
+            color: #fff;
+            border-color: #4f46e5
+        }
+
+        .separador {
+            border: none;
+            border-top: 1px solid #f0f0f0;
+            margin: 20px 0
+        }
+
         .toggle-row {
             display: flex;
             align-items: center;
             gap: 10px;
-            margin-bottom: 20px;
+            margin-bottom: 16px;
             font-size: 13px;
             color: #555
         }
@@ -332,21 +457,25 @@
             background: #15803d
         }
 
-        #inputCarpeta {
-            display: none
-        }
-
-        .separador {
+        .btn-verificar {
+            padding: 10px 16px;
+            background: #4f46e5;
+            color: #fff;
             border: none;
-            border-top: 1px solid #f0f0f0;
-            margin: 20px 0
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 13px;
+            white-space: nowrap;
+            transition: background .2s
         }
 
-        .hint {
-            font-size: 12px;
-            color: #999;
-            margin-top: -12px;
-            margin-bottom: 16px
+        .btn-verificar:hover {
+            background: #4338ca
+        }
+
+        .btn-verificar:disabled {
+            background: #a5b4fc;
+            cursor: not-allowed
         }
     </style>
 </head>
@@ -355,30 +484,64 @@
 
     <div class="card">
         <h1>🖼️ SIESAM — Carga masiva de imágenes</h1>
-        <p class="subtitle">Completa los datos del cliente y selecciona la carpeta con las imágenes para iniciar la
-            subida automática.</p>
+        <p class="subtitle">Completa los datos del cliente y la carpeta de imágenes para iniciar la subida automática.
+        </p>
 
+        <!-- URL -->
         <label>URL del sistema SIESAM del cliente</label>
-        <input type="url" id="url" placeholder="https://app16.siesam.com.bo/?nombre-cliente/#/" />
+        <input type="url" id="url" placeholder="https://app16.siesam.com.bo/?nombre-cliente/#/" class="mb" />
 
+        <!-- Usuario y clave -->
         <div class="row">
             <div>
                 <label>Usuario</label>
-                <input type="text" id="usuario" placeholder="correo@siesam.com.bo" />
+                <input type="text" id="usuario" placeholder="correo@siesam.com.bo" class="mb" />
             </div>
             <div>
                 <label>Contraseña</label>
-                <input type="password" id="clave" placeholder="••••••••" />
+                <div class="password-wrap">
+                    <input type="password" id="clave" placeholder="••••••••" />
+                    <button type="button" class="btn-ojo" id="btnOjo" onclick="togglePassword()">👁️</button>
+                </div>
             </div>
         </div>
 
+        <!-- Carpeta -->
         <label>Carpeta de imágenes</label>
-        <div class="carpeta-row">
-            <input type="text" id="carpetaTexto" placeholder="Haz clic en 'Elegir carpeta'..." readonly />
-            <button class="btn-secundario" onclick="elegirCarpeta()">📂 Elegir carpeta</button>
+
+        <!-- Tabs Mac / Windows -->
+        <div class="tabs">
+            <button class="tab active" onclick="cambiarOS('mac', this)">🍎 Mac</button>
+            <button class="tab" onclick="cambiarOS('win', this)">🪟 Windows</button>
         </div>
-        <input type="file" id="inputCarpeta" webkitdirectory multiple onchange="procesarCarpeta(this)" />
-        <p class="hint">Se detectarán automáticamente los archivos .jpg, .png y .jpeg dentro de la carpeta.</p>
+
+        <!-- Instrucciones Mac -->
+        <div class="instrucciones" id="instrMac">
+            <strong>Cómo obtener la ruta en Mac:</strong><br>
+            1. Abre <strong>Finder</strong> y navega hasta tu carpeta de imágenes.<br>
+            2. Clic derecho en la carpeta → <strong>"Obtener información"</strong>.<br>
+            3. Copia el texto de <strong>"Ubicación"</strong> y agrégale el nombre de la carpeta al final.<br>
+            &nbsp;&nbsp;&nbsp;Ejemplo: <code>/Users/brian/Desktop/imagenes_cliente</code><br>
+            4. Pégalo en el campo de abajo y haz clic en <strong>Verificar</strong>.
+        </div>
+
+        <!-- Instrucciones Windows -->
+        <div class="instrucciones" id="instrWin" style="display:none">
+            <strong>Cómo obtener la ruta en Windows:</strong><br>
+            1. Abre el <strong>Explorador de archivos</strong> y navega hasta tu carpeta de imágenes.<br>
+            2. Haz clic en la <strong>barra de dirección</strong> (arriba, donde dice el nombre de la carpeta).<br>
+            3. La ruta completa se seleccionará automáticamente — cópiala con <strong>Ctrl+C</strong>.<br>
+            &nbsp;&nbsp;&nbsp;Ejemplo: <code>C:\Users\brian\Desktop\imagenes_cliente</code><br>
+            4. Pégala en el campo de abajo y haz clic en <strong>Verificar</strong>.
+        </div>
+
+        <!-- Input ruta + verificar -->
+        <div class="carpeta-row" style="margin-top:12px">
+            <input type="text" id="carpetaRuta" placeholder="Pega aquí la ruta completa de la carpeta..."
+                oninput="resetVerificacion()" />
+            <button class="btn-verificar" id="btnVerificar" onclick="verificarCarpeta()">✔ Verificar</button>
+        </div>
+        <div id="carpetaFeedback" class="hint"></div>
 
         <hr class="separador" />
 
@@ -397,11 +560,15 @@
         </div>
 
         <div class="botones">
-            <button class="btn btn-iniciar" id="btnIniciar" onclick="iniciar()">▶ Iniciar subida</button>
+            <button class="btn btn-iniciar" id="btnIniciar" onclick="iniciar()" disabled>▶ Iniciar subida</button>
             <button class="btn btn-detener" id="btnDetener" onclick="detener()" disabled>⛔ Detener</button>
         </div>
+        <p class="hint" style="margin-top:10px;text-align:center">
+            El botón "Iniciar" se activa después de verificar la carpeta correctamente.
+        </p>
     </div>
 
+    <!-- PROGRESO -->
     <div class="card progreso-card" id="progresoCard">
         <div style="display:flex;align-items:center;margin-bottom:16px">
             <span style="font-size:15px;font-weight:700;color:#1a1a2e">Progreso</span>
@@ -444,30 +611,81 @@
         let exitosas = 0;
         let fallidas = 0;
         let eventoSource = null;
-        let carpetaNombre = '';
+        let carpetaVerificada = '';
 
-        // ==================== CARPETA ====================
-        function elegirCarpeta() {
-            document.getElementById('inputCarpeta').click();
+        // ==================== OJITO CONTRASEÑA ====================
+        function togglePassword() {
+            const input = document.getElementById('clave');
+            const btn = document.getElementById('btnOjo');
+            if (input.type === 'password') {
+                input.type = 'text';
+                btn.textContent = '👨🏻‍💻';
+            } else {
+                input.type = 'password';
+                btn.textContent = '👁️';
+            }
         }
 
-        function procesarCarpeta(input) {
-            const archivos = Array.from(input.files);
-            const imagenes = archivos.filter(f =>
-                f.name.endsWith('.jpg') || f.name.endsWith('.png') || f.name.endsWith('.jpeg')
-            );
+        // ==================== TABS MAC / WINDOWS ====================
+        function cambiarOS(os, tabEl) {
+            document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+            tabEl.classList.add('active');
+            document.getElementById('instrMac').style.display = os === 'mac' ? 'block' : 'none';
+            document.getElementById('instrWin').style.display = os === 'win' ? 'block' : 'none';
+            resetVerificacion();
+        }
 
-            if (imagenes.length === 0) {
-                alert('No se encontraron imágenes (.jpg, .png, .jpeg) en la carpeta seleccionada.');
+        // ==================== VERIFICAR CARPETA ====================
+        async function verificarCarpeta() {
+            const ruta = document.getElementById('carpetaRuta').value.trim();
+            if (!ruta) {
+                mostrarFeedback('Pega la ruta de la carpeta primero.', 'error');
                 return;
             }
 
-            carpetaNombre = imagenes[0].webkitRelativePath.split('/')[0];
-            totalImagenes = imagenes.length;
+            const btn = document.getElementById('btnVerificar');
+            btn.disabled = true;
+            btn.textContent = 'Verificando...';
 
-            document.getElementById('carpetaTexto').value =
-                `${carpetaNombre}  (${imagenes.length} imágenes encontradas)`;
-            document.getElementById('statTotal').textContent = totalImagenes;
+            const resp = await fetch('/verificar-carpeta', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ carpeta: ruta }),
+            });
+
+            const data = await resp.json();
+            btn.disabled = false;
+            btn.textContent = '✔ Verificar';
+
+            if (data.ok) {
+                carpetaVerificada = data.ruta;
+                totalImagenes = data.total;
+                document.getElementById('statTotal').textContent = totalImagenes;
+                document.getElementById('carpetaRuta').classList.add('ok');
+                document.getElementById('carpetaRuta').classList.remove('error');
+                mostrarFeedback(`✅ Carpeta válida — ${data.total} imágenes encontradas.`, 'ok');
+                document.getElementById('btnIniciar').disabled = false;
+            } else {
+                carpetaVerificada = '';
+                document.getElementById('carpetaRuta').classList.add('error');
+                document.getElementById('carpetaRuta').classList.remove('ok');
+                mostrarFeedback(`❌ ${data.error}`, 'error');
+                document.getElementById('btnIniciar').disabled = true;
+            }
+        }
+
+        function mostrarFeedback(msg, tipo) {
+            const el = document.getElementById('carpetaFeedback');
+            el.textContent = msg;
+            el.className = tipo === 'ok' ? 'hint-ok' : 'hint-err';
+        }
+
+        function resetVerificacion() {
+            carpetaVerificada = '';
+            document.getElementById('btnIniciar').disabled = true;
+            document.getElementById('carpetaRuta').classList.remove('ok', 'error');
+            document.getElementById('carpetaFeedback').textContent = '';
+            document.getElementById('carpetaFeedback').className = 'hint';
         }
 
         // ==================== INICIAR ====================
@@ -478,15 +696,20 @@
             const mostrarNavegador = document.getElementById('mostrarNavegador').checked;
             const reiniciar = document.getElementById('reiniciar').checked;
 
-            if (!url || !usuario || !clave || !carpetaNombre) {
-                alert('Por favor completa todos los campos y selecciona la carpeta de imágenes.');
+            if (!url || !usuario || !clave) {
+                alert('Por favor completa la URL, usuario y contraseña.');
+                return;
+            }
+
+            if (!carpetaVerificada) {
+                alert('Primero verifica la carpeta de imágenes.');
                 return;
             }
 
             const resp = await fetch('/iniciar', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ url, usuario, clave, carpeta: carpetaNombre, mostrarNavegador, reiniciar }),
+                body: JSON.stringify({ url, usuario, clave, carpeta: carpetaVerificada, mostrarNavegador, reiniciar }),
             });
 
             if (!resp.ok) {
@@ -502,8 +725,7 @@
             document.getElementById('estadoBadge').className = 'badge badge-activo';
             document.getElementById('descargaFallidos').style.display = 'none';
 
-            exitosas = 0;
-            fallidas = 0;
+            exitosas = 0; fallidas = 0;
             actualizarStats();
             limpiarLog();
             conectarLog();
@@ -518,7 +740,6 @@
         function conectarLog() {
             if (eventoSource) eventoSource.close();
             eventoSource = new EventSource('/logs');
-
             eventoSource.onmessage = (e) => {
                 const { mensaje } = JSON.parse(e.data);
                 if (mensaje === '__FIN__') { finalizarProceso(); return; }
@@ -553,17 +774,13 @@
                 exitosas++;
                 actualizarStats();
             }
-            const matchFallidas = texto.match(/❌ Fallidos en esta corrida: (\d+)/);
-            if (matchFallidas) {
-                fallidas = parseInt(matchFallidas[1]);
-                actualizarStats();
-            }
+            const m = texto.match(/❌ Fallidos en esta corrida: (\d+)/);
+            if (m) { fallidas = parseInt(m[1]); actualizarStats(); }
         }
 
         function actualizarStats() {
             document.getElementById('statExitosas').textContent = exitosas;
             document.getElementById('statFallidas').textContent = fallidas;
-
             if (totalImagenes > 0) {
                 const pct = Math.min(100, Math.round((exitosas / totalImagenes) * 100));
                 document.getElementById('barra').style.width = pct + '%';
@@ -576,21 +793,12 @@
             document.getElementById('btnDetener').disabled = true;
             document.getElementById('estadoBadge').textContent = 'Finalizado';
             document.getElementById('estadoBadge').className = 'badge badge-detenido';
-
-            if (fallidas > 0) {
-                document.getElementById('descargaFallidos').style.display = 'block';
-            }
-
+            if (fallidas > 0) document.getElementById('descargaFallidos').style.display = 'block';
             if (eventoSource) { eventoSource.close(); eventoSource = null; }
         }
 
-        function limpiarLog() {
-            document.getElementById('log').innerHTML = '';
-        }
-
-        function descargarFallidos() {
-            window.location.href = '/fallidos';
-        }
+        function limpiarLog() { document.getElementById('log').innerHTML = ''; }
+        function descargarFallidos() { window.location.href = '/fallidos'; }
 
         // Al cargar la página, revisar si ya hay proceso activo
         window.addEventListener('load', async () => {
@@ -603,7 +811,6 @@
                 document.getElementById('estadoBadge').className = 'badge badge-activo';
                 conectarLog();
             }
-
             const progreso = await fetch('/progreso').then(r => r.json());
             if (progreso.completados > 0) {
                 exitosas = progreso.completados;

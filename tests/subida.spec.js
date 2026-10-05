@@ -13,19 +13,17 @@ if (!fs.existsSync(configPath)) {
 }
 const CONFIG = JSON.parse(fs.readFileSync(configPath, 'utf-8'));
 
-const LOGIN_URL        = CONFIG.url;
-const USUARIO          = CONFIG.usuario;
-const CLAVE            = CONFIG.clave;
-const MOSTRAR_NAVEGADOR = CONFIG.mostrarNavegador !== false; // default true
-const IMAGES_DIR       = path.isAbsolute(CONFIG.carpeta)
-  ? CONFIG.carpeta
-  : path.join(ROOT, CONFIG.carpeta);
+const LOGIN_URL         = CONFIG.url;
+const USUARIO           = CONFIG.usuario;
+const CLAVE             = CONFIG.clave;
+const MOSTRAR_NAVEGADOR = CONFIG.mostrarNavegador !== false;
+const IMAGES_DIR        = CONFIG.carpeta; // ya viene como ruta absoluta desde el servidor
 
 // ==================== CONFIGURACIÓN ====================
-const RESTART_EVERY       = 40;
-const T                   = 8000;
+const RESTART_EVERY        = 40;
+const T                    = 8000;
 const REINTENTOS_POR_IMAGEN = 2;
-const RESUMEN_CADA        = 100;
+const RESUMEN_CADA         = 100;
 
 const PROGRESS_FILE = path.join(ROOT, 'progreso_subida.json');
 const LOG_FILE      = path.join(ROOT, `log_subida_${new Date().toISOString().replace(/[:.]/g, '-')}.txt`);
@@ -39,7 +37,7 @@ function log(mensaje) {
 
 function formatearDuracion(ms) {
   const s = Math.floor(ms / 1000);
-  return `${Math.floor(s/3600)}h ${Math.floor((s%3600)/60)}m ${s%60}s`;
+  return `${Math.floor(s / 3600)}h ${Math.floor((s % 3600) / 60)}m ${s % 60}s`;
 }
 
 function cargarProgreso() {
@@ -97,7 +95,7 @@ async function limpiarYEscribir(page, codigo) {
   await sb.evaluate((el, v) => {
     const setter = Object.getOwnPropertyDescriptor(window.HTMLInputElement.prototype, 'value').set;
     setter.call(el, '');
-    el.dispatchEvent(new Event('input', { bubbles: true }));
+    el.dispatchEvent(new Event('input',  { bubbles: true }));
     setter.call(el, v);
     el.dispatchEvent(new Event('input',  { bubbles: true }));
     el.dispatchEvent(new Event('change', { bubbles: true }));
@@ -112,7 +110,7 @@ async function limpiarYEscribir(page, codigo) {
 
 // ==================== PROCESAR IMAGEN ====================
 async function procesarImagen(page, file) {
-  const filePath      = path.join(IMAGES_DIR, file);
+  const filePath       = path.join(IMAGES_DIR, file);
   const codigoProducto = file.replace(/\.[^/.]+$/, '');
 
   await cerrarModalesAbiertos(page);
@@ -159,16 +157,16 @@ test('Automatización: Carga masiva de imágenes SIESAM', async () => {
   test.setTimeout(0);
 
   const inicio = Date.now();
-  const files = fs.readdirSync(IMAGES_DIR)
+  const files  = fs.readdirSync(IMAGES_DIR)
     .filter(f => f.endsWith('.jpg') || f.endsWith('.png') || f.endsWith('.jpeg'));
 
-  log(`📸 ${files.length} imágenes encontradas.`);
+  log(`📸 ${files.length} imágenes encontradas en: ${IMAGES_DIR}`);
   log(`🖥️  Navegador: ${MOSTRAR_NAVEGADOR ? 'visible' : 'segundo plano'}`);
   log(`📝 Log: ${LOG_FILE}`);
 
-  const progreso     = cargarProgreso();
-  const completados  = new Set(progreso.completados);
-  const pendientes   = files.filter(f => !completados.has(f.replace(/\.[^/.]+$/, '')));
+  const progreso    = cargarProgreso();
+  const completados = new Set(progreso.completados);
+  const pendientes  = files.filter(f => !completados.has(f.replace(/\.[^/.]+$/, '')));
 
   log(`⏭️  Ya completados: ${completados.size} | 🔜 Pendientes: ${pendientes.length}`);
 

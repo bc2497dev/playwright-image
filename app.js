@@ -33,6 +33,31 @@ function enviarLog(mensaje) {
 // ==================== PROCESO ACTIVO ====================
 let procesoActivo = null;
 
+// ==================== VERIFICAR CARPETA ====================
+// El navegador no puede darnos la ruta absoluta directamente por seguridad,
+// así que el usuario la escribe/pega y nosotros la verificamos desde el servidor
+app.post('/verificar-carpeta', (req, res) => {
+  const { carpeta } = req.body;
+  if (!carpeta) return res.status(400).json({ error: 'Ruta vacía.' });
+
+  const rutaLimpia = carpeta.trim().replace(/^["']|["']$/g, ''); // quita comillas si las hay
+
+  if (!fs.existsSync(rutaLimpia)) {
+    return res.json({ ok: false, error: `No se encontró la carpeta: ${rutaLimpia}` });
+  }
+
+  const archivos = fs.readdirSync(rutaLimpia);
+  const imagenes = archivos.filter(f =>
+    f.endsWith('.jpg') || f.endsWith('.png') || f.endsWith('.jpeg')
+  );
+
+  if (imagenes.length === 0) {
+    return res.json({ ok: false, error: 'La carpeta no contiene imágenes (.jpg, .png, .jpeg).' });
+  }
+
+  res.json({ ok: true, total: imagenes.length, ruta: rutaLimpia });
+});
+
 // ==================== INICIAR ====================
 app.post('/iniciar', (req, res) => {
   const { url, usuario, clave, carpeta, mostrarNavegador, reiniciar } = req.body;
@@ -45,8 +70,14 @@ app.post('/iniciar', (req, res) => {
     return res.status(400).json({ error: 'Ya hay un proceso en ejecución.' });
   }
 
+  const rutaLimpia = carpeta.trim().replace(/^["']|["']$/g, '');
+
+  if (!fs.existsSync(rutaLimpia)) {
+    return res.status(400).json({ error: `La carpeta no existe: ${rutaLimpia}` });
+  }
+
   // Guardar config para que la lea el spec
-  const config = { url, usuario, clave, carpeta, mostrarNavegador: !!mostrarNavegador };
+  const config = { url, usuario, clave, carpeta: rutaLimpia, mostrarNavegador: !!mostrarNavegador };
   fs.writeFileSync(path.join(__dirname, 'config_actual.json'), JSON.stringify(config, null, 2));
 
   // Borrar progreso anterior si se pidió
