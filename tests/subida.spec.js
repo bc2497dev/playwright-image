@@ -1,123 +1,119 @@
-import { test, expect, chromium } from '@playwright/test';
+import { test, chromium } from '@playwright/test';
 import fs from 'fs';
 import path from 'path';
+import { fileURLToPath } from 'url';
+
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
+const ROOT = path.join(__dirname, '..');
+
+// ==================== LEE LA CONFIG GENERADA POR LA INTERFAZ ====================
+const configPath = path.join(ROOT, 'config_actual.json');
+if (!fs.existsSync(configPath)) {
+  throw new Error('No se encontró config_actual.json. Inicia el proceso desde la interfaz web en http://localhost:3000');
+}
+const CONFIG = JSON.parse(fs.readFileSync(configPath, 'utf-8'));
+
+const LOGIN_URL        = CONFIG.url;
+const USUARIO          = CONFIG.usuario;
+const CLAVE            = CONFIG.clave;
+const MOSTRAR_NAVEGADOR = CONFIG.mostrarNavegador !== false; // default true
+const IMAGES_DIR       = path.isAbsolute(CONFIG.carpeta)
+  ? CONFIG.carpeta
+  : path.join(ROOT, CONFIG.carpeta);
 
 // ==================== CONFIGURACIÓN ====================
-const LOGIN_URL = '<URL_SISTEMA>';
-const USUARIO = '<USUARIO>';
-const CLAVE = '<CLAVE>';
-const RESTART_EVERY = 40;
-const T = 8000;
+const RESTART_EVERY       = 40;
+const T                   = 8000;
 const REINTENTOS_POR_IMAGEN = 2;
-const RESUMEN_CADA = 100;
+const RESUMEN_CADA        = 100;
 
-const PROGRESS_FILE = path.join(process.cwd(), 'progreso_subida.json');
-const LOG_FILE = path.join(process.cwd(), `log_subida_${new Date().toISOString().replace(/[:.]/g, '-')}.txt`);
-const CSV_FALLIDOS = path.join(process.cwd(), 'fallidos_final.csv');
+const PROGRESS_FILE = path.join(ROOT, 'progreso_subida.json');
+const LOG_FILE      = path.join(ROOT, `log_subida_${new Date().toISOString().replace(/[:.]/g, '-')}.txt`);
+const CSV_FALLIDOS  = path.join(ROOT, 'fallidos_final.csv');
 
-// ==================== LOG A ARCHIVO Y CONSOLA ====================
+// ==================== UTILIDADES ====================
 function log(mensaje) {
   console.log(mensaje);
   fs.appendFileSync(LOG_FILE, mensaje + '\n');
 }
 
 function formatearDuracion(ms) {
-  const totalSeg = Math.floor(ms / 1000);
-  const horas = Math.floor(totalSeg / 3600);
-  const min = Math.floor((totalSeg % 3600) / 60);
-  const seg = totalSeg % 60;
-  return `${horas}h ${min}m ${seg}s`;
+  const s = Math.floor(ms / 1000);
+  return `${Math.floor(s/3600)}h ${Math.floor((s%3600)/60)}m ${s%60}s`;
 }
 
-// ==================== PROGRESO PERSISTENTE ====================
 function cargarProgreso() {
-  if (fs.existsSync(PROGRESS_FILE)) {
-    return JSON.parse(fs.readFileSync(PROGRESS_FILE, 'utf-8'));
-  }
-  return { completados: [] };
+  return fs.existsSync(PROGRESS_FILE)
+    ? JSON.parse(fs.readFileSync(PROGRESS_FILE, 'utf-8'))
+    : { completados: [] };
 }
 
-function guardarProgreso(progreso) {
-  fs.writeFileSync(PROGRESS_FILE, JSON.stringify(progreso, null, 2));
+function guardarProgreso(p) {
+  fs.writeFileSync(PROGRESS_FILE, JSON.stringify(p, null, 2));
 }
 
-// ==================== PATRÓN FLEXIBLE PARA _ Y / ====================
 function codigoAPatronFlexible(codigo) {
-  const escapado = codigo.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-  const flexible = escapado.replace(/[_/]/g, '[_/]');
-  return new RegExp(`^${flexible}$`);
+  const esc = codigo.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+  return new RegExp(`^${esc.replace(/[_/]/g, '[_/]')}$`);
 }
 
-// ==================== ABRIR SESIÓN ====================
+// ==================== SESIÓN ====================
 async function abrirSesion(browser) {
   const context = await browser.newContext();
-  const page = await context.newPage();
+  const page    = await context.newPage();
 
   await page.goto(LOGIN_URL);
   await page.getByRole('textbox', { name: 'Seleccione al usuario' }).fill(USUARIO, { timeout: T });
   await page.getByRole('textbox', { name: 'Password' }).fill(CLAVE, { timeout: T });
-  await page.getByRole('button', { name: '🏖️ Acceder' }).click({ timeout: T });
-
-  await page.getByRole('link', { name: 'Inventarios' }).first().click({ timeout: T });
-  await page.getByRole('link', { name: 'Productos' }).click({ timeout: T });
+  await page.getByRole('button',  { name: '🏖️ Acceder' }).click({ timeout: T });
+  await page.getByRole('link',    { name: 'Inventarios' }).first().click({ timeout: T });
+  await page.getByRole('link',    { name: 'Productos' }).click({ timeout: T });
   await page.waitForTimeout(2000);
 
   return { context, page };
 }
 
-// ==================== CERRAR MODALES RESIDUALES ====================
+// ==================== MODALES ====================
 async function cerrarModalesAbiertos(page) {
-  const modalAbierto = page.locator('.modal.show, [id$="__BV_modal_outer_"]');
-  const count = await modalAbierto.count();
-
-  if (count > 0) {
-    log(`⚠️ Se detectó un modal abierto (${count}). Cerrando con Escape...`);
+  const modal = page.locator('.modal.show, [id$="__BV_modal_outer_"]');
+  if (await modal.count() > 0) {
+    log(`⚠️ Modal detectado. Cerrando...`);
     await page.keyboard.press('Escape');
     await page.waitForTimeout(500);
-
-    const sigueAbierto = await page.locator('.modal.show, [id$="__BV_modal_outer_"]').count();
-    if (sigueAbierto > 0) {
-      const botonCerrar = page.locator('.modal.show button.close, .modal.show [aria-label="Close"]').first();
-      if (await botonCerrar.count() > 0) {
-        await botonCerrar.click({ timeout: 3000 }).catch(() => {});
-        await page.waitForTimeout(500);
-      }
+    if (await modal.count() > 0) {
+      const btn = page.locator('.modal.show button.close, .modal.show [aria-label="Close"]').first();
+      if (await btn.count() > 0) await btn.click({ timeout: 3000 }).catch(() => {});
+      await page.waitForTimeout(500);
     }
   }
 }
 
-// ==================== LIMPIAR Y ESCRIBIR EN BUSCADOR ====================
-async function limpiarYEscribir(page, codigoProducto) {
-  const searchBox = page.getByRole('searchbox', { name: 'Buscar..' });
-  await searchBox.waitFor({ state: 'visible', timeout: T });
-  await searchBox.click({ timeout: T });
+// ==================== BUSCADOR ====================
+async function limpiarYEscribir(page, codigo) {
+  const sb = page.getByRole('searchbox', { name: 'Buscar..' });
+  await sb.waitFor({ state: 'visible', timeout: T });
+  await sb.click({ timeout: T });
 
-  await searchBox.evaluate((el, nuevoValor) => {
-    const nativeInputValueSetter = Object.getOwnPropertyDescriptor(
-      window.HTMLInputElement.prototype, 'value'
-    ).set;
-    nativeInputValueSetter.call(el, '');
+  await sb.evaluate((el, v) => {
+    const setter = Object.getOwnPropertyDescriptor(window.HTMLInputElement.prototype, 'value').set;
+    setter.call(el, '');
     el.dispatchEvent(new Event('input', { bubbles: true }));
-
-    nativeInputValueSetter.call(el, nuevoValor);
-    el.dispatchEvent(new Event('input', { bubbles: true }));
+    setter.call(el, v);
+    el.dispatchEvent(new Event('input',  { bubbles: true }));
     el.dispatchEvent(new Event('change', { bubbles: true }));
-  }, codigoProducto);
+  }, codigo);
 
   await page.waitForTimeout(300);
 
-  const valorFinal = await searchBox.inputValue();
-  if (valorFinal !== codigoProducto) {
-    throw new Error(`El buscador no quedó con el valor esperado. Tiene: "${valorFinal}"`);
-  }
-
+  const val = await sb.inputValue();
+  if (val !== codigo) throw new Error(`Buscador no quedó con "${codigo}", tiene "${val}"`);
   await page.keyboard.press('Enter');
 }
 
-// ==================== PROCESAR UNA IMAGEN ====================
-async function procesarImagen(page, imagesDir, file) {
-  const filePath = path.join(imagesDir, file);
-  const codigoProducto = file.replace(/\.[^/.]+$/, "");
+// ==================== PROCESAR IMAGEN ====================
+async function procesarImagen(page, file) {
+  const filePath      = path.join(IMAGES_DIR, file);
+  const codigoProducto = file.replace(/\.[^/.]+$/, '');
 
   await cerrarModalesAbiertos(page);
   await limpiarYEscribir(page, codigoProducto);
@@ -127,40 +123,30 @@ async function procesarImagen(page, imagesDir, file) {
   await resultado.click({ timeout: T });
 
   await page.getByRole('button', { name: 'EDITAR' }).click({ timeout: T });
-  await page.getByRole('tab', { name: 'IMÁGENES' }).click({ timeout: T });
+  await page.getByRole('tab',    { name: 'IMÁGENES' }).click({ timeout: T });
 
-  const fileInputCount = await page.locator('input[type="file"]').count();
-  if (fileInputCount === 0) {
-    throw new Error('No se encontró ningún input[type="file"] en la página.');
-  }
+  if (await page.locator('input[type="file"]').count() === 0)
+    throw new Error('No se encontró input[type="file"] en la página.');
 
   await page.locator('input[type="file"]').first().setInputFiles(filePath, { timeout: T });
-
   await page.waitForTimeout(500);
-  const preview = page.locator('img').last();
-  await preview.waitFor({ state: 'visible', timeout: T }).catch(() => {
-    log(`⚠️ No se detectó vista previa de imagen para ${codigoProducto}`);
+  await page.locator('img').last().waitFor({ state: 'visible', timeout: T }).catch(() => {
+    log(`⚠️ Sin vista previa para ${codigoProducto}`);
   });
 
   const [response] = await Promise.all([
-    page.waitForResponse(resp => resp.request().method() === 'POST' && resp.status() < 400, { timeout: T }).catch(() => null),
+    page.waitForResponse(r => r.request().method() === 'POST' && r.status() < 400, { timeout: T }).catch(() => null),
     page.getByRole('button', { name: 'Guardar' }).click({ timeout: T }),
   ]);
-
-  if (!response) {
-    log(`⚠️ No se detectó respuesta de red al guardar ${codigoProducto} (verifica manualmente)`);
-  }
+  if (!response) log(`⚠️ Sin respuesta de red al guardar ${codigoProducto}`);
 
   await page.waitForTimeout(1500);
 
   const closeBtn = page.getByRole('button', { name: 'Close' });
-  if (await closeBtn.count() > 0) {
-    await closeBtn.click({ timeout: T }).catch(() => {});
-  }
+  if (await closeBtn.count() > 0) await closeBtn.click({ timeout: T }).catch(() => {});
   await page.waitForTimeout(800);
 
-  const modalSigueAbierto = await page.locator('.modal.show, [id$="__BV_modal_outer_"]').count();
-  if (modalSigueAbierto > 0) {
+  if (await page.locator('.modal.show, [id$="__BV_modal_outer_"]').count() > 0) {
     await page.keyboard.press('Escape');
     await page.waitForTimeout(500);
   }
@@ -169,139 +155,106 @@ async function procesarImagen(page, imagesDir, file) {
 }
 
 // ==================== TEST PRINCIPAL ====================
-test('Automatización: Carga masiva de imágenes SIESAM (1300 imágenes, resiliente)', async () => {
+test('Automatización: Carga masiva de imágenes SIESAM', async () => {
   test.setTimeout(0);
 
-  const inicioTest = Date.now();
+  const inicio = Date.now();
+  const files = fs.readdirSync(IMAGES_DIR)
+    .filter(f => f.endsWith('.jpg') || f.endsWith('.png') || f.endsWith('.jpeg'));
 
-  const imagesDir = path.join(process.cwd(), 'mis_imagenes');
-  const files = fs.readdirSync(imagesDir);
-  const imageFiles = files.filter(f => f.endsWith('.jpg') || f.endsWith('.png') || f.endsWith('.jpeg'));
+  log(`📸 ${files.length} imágenes encontradas.`);
+  log(`🖥️  Navegador: ${MOSTRAR_NAVEGADOR ? 'visible' : 'segundo plano'}`);
+  log(`📝 Log: ${LOG_FILE}`);
 
-  log(`📸 Se encontraron ${imageFiles.length} imágenes para subir al sistema.`);
-  log(`📝 Log detallado guardándose en: ${LOG_FILE}`);
+  const progreso     = cargarProgreso();
+  const completados  = new Set(progreso.completados);
+  const pendientes   = files.filter(f => !completados.has(f.replace(/\.[^/.]+$/, '')));
 
-  const progreso = cargarProgreso();
-  const yaCompletados = new Set(progreso.completados);
+  log(`⏭️  Ya completados: ${completados.size} | 🔜 Pendientes: ${pendientes.length}`);
 
-  const pendientes = imageFiles.filter(f => {
-    const codigo = f.replace(/\.[^/.]+$/, "");
-    return !yaCompletados.has(codigo);
-  });
-
-  log(`⏭️  Ya completados en corridas anteriores: ${yaCompletados.size}`);
-  log(`🔜 Pendientes por procesar en esta corrida: ${pendientes.length}`);
-
-  // 👇 Sin "channel" para usar el Chromium instalado manualmente en caché.
-  // Si prefieres usar tu Chrome normal de aplicaciones, cambia esta línea a:
-  // const browser = await chromium.launch({ channel: 'chrome', headless: false });
-  const browser = await chromium.launch({ headless: false });
-
+  const browser = await chromium.launch({ headless: !MOSTRAR_NAVEGADOR });
   let { context, page } = await abrirSesion(browser);
 
   let crasheo = false;
-  page.on('crash', () => {
-    log('💥 La página crasheó (evento "crash" detectado).');
-    crasheo = true;
-  });
+  page.on('crash', () => { log('💥 La página crasheó.'); crasheo = true; });
 
-  let procesadosDesdeUltimoReinicio = 0;
-  let totalProcesadas = 0;
-  let exitosasEnTramo = 0;
+  let desdeReinicio = 0, totalProcesadas = 0, exitosasTramo = 0;
   const fallidosFinal = [];
 
   for (const file of pendientes) {
-    const codigoProducto = file.replace(/\.[^/.]+$/, "");
-    log(`🚀 Procesando código: ${codigoProducto}`);
+    const codigo = file.replace(/\.[^/.]+$/, '');
+    log(`🚀 Procesando: ${codigo}`);
 
-    let exito = false;
-    let ultimoError = null;
+    let exito = false, ultimoError = null;
 
     for (let intento = 1; intento <= REINTENTOS_POR_IMAGEN && !exito; intento++) {
       try {
-        const codigoProcesado = await procesarImagen(page, imagesDir, file);
-
-        progreso.completados.push(codigoProcesado);
+        await procesarImagen(page, file);
+        progreso.completados.push(codigo);
         guardarProgreso(progreso);
-
-        log(`✅ ${codigoProcesado} completado.`);
-        procesadosDesdeUltimoReinicio++;
-        exitosasEnTramo++;
-        exito = true;
+        log(`✅ ${codigo} completado.`);
+        desdeReinicio++; exitosasTramo++; exito = true;
 
       } catch (err) {
         ultimoError = err;
         const esCrash = crasheo || /crash/i.test(err.message);
-
-        log(`❌ Intento ${intento}/${REINTENTOS_POR_IMAGEN} falló para ${codigoProducto}: ${err.message}`);
+        log(`❌ Intento ${intento}/${REINTENTOS_POR_IMAGEN} falló para ${codigo}: ${err.message}`);
 
         if (esCrash) {
-          log('🔄 Recreando sesión del navegador tras crash...');
+          log('🔄 Recreando sesión tras crash...');
           crasheo = false;
           await context.close().catch(() => {});
           ({ context, page } = await abrirSesion(browser));
-          page.on('crash', () => {
-            log('💥 La página crasheó (evento "crash" detectado).');
-            crasheo = true;
-          });
-          procesadosDesdeUltimoReinicio = 0;
+          page.on('crash', () => { log('💥 La página crasheó.'); crasheo = true; });
+          desdeReinicio = 0;
         } else {
-          await page.screenshot({ path: `error_${codigoProducto}_intento${intento}.png` }).catch(() => {});
+          await page.screenshot({ path: path.join(ROOT, `error_${codigo}_i${intento}.png`) }).catch(() => {});
           await page.keyboard.press('Escape').catch(() => {});
           await page.waitForTimeout(1000);
         }
       }
     }
 
-    if (!exito) {
-      fallidosFinal.push({ codigo: codigoProducto, error: ultimoError?.message || 'desconocido' });
-    }
+    if (!exito) fallidosFinal.push({ codigo, error: ultimoError?.message || 'desconocido' });
 
     totalProcesadas++;
 
     if (totalProcesadas % RESUMEN_CADA === 0) {
-      const transcurrido = Date.now() - inicioTest;
+      const elapsed   = Date.now() - inicio;
       const restantes = pendientes.length - totalProcesadas;
-      const promedioMsPorImagen = transcurrido / totalProcesadas;
-      const estimadoRestanteMs = promedioMsPorImagen * restantes;
-
+      const estimado  = (elapsed / totalProcesadas) * restantes;
       log(`\n📊 ----- RESUMEN PARCIAL (${totalProcesadas}/${pendientes.length}) -----`);
-      log(`   ✅ Exitosas en este tramo de ${RESUMEN_CADA}: ${exitosasEnTramo}`);
-      log(`   ❌ Fallidas en este tramo: ${RESUMEN_CADA - exitosasEnTramo}`);
-      log(`   ⏱️  Tiempo transcurrido: ${formatearDuracion(transcurrido)}`);
-      log(`   📈 Estimado restante: ${formatearDuracion(estimadoRestanteMs)} (${restantes} imágenes pendientes)`);
+      log(`   ✅ Exitosas en este tramo: ${exitosasTramo}`);
+      log(`   ❌ Fallidas en este tramo: ${RESUMEN_CADA - exitosasTramo}`);
+      log(`   ⏱️  Transcurrido: ${formatearDuracion(elapsed)}`);
+      log(`   📈 Estimado restante: ${formatearDuracion(estimado)} (${restantes} pendientes)`);
       log(`------------------------------------------------\n`);
-
-      exitosasEnTramo = 0;
+      exitosasTramo = 0;
     }
 
-    if (procesadosDesdeUltimoReinicio >= RESTART_EVERY) {
-      log(`♻️  Reinicio preventivo del navegador tras ${RESTART_EVERY} imágenes...`);
+    if (desdeReinicio >= RESTART_EVERY) {
+      log(`♻️  Reinicio preventivo tras ${RESTART_EVERY} imágenes...`);
       await context.close().catch(() => {});
       ({ context, page } = await abrirSesion(browser));
-      page.on('crash', () => {
-        log('💥 La página crasheó (evento "crash" detectado).');
-        crasheo = true;
-      });
-      procesadosDesdeUltimoReinicio = 0;
+      page.on('crash', () => { log('💥 La página crasheó.'); crasheo = true; });
+      desdeReinicio = 0;
     }
   }
 
   await context.close().catch(() => {});
   await browser.close().catch(() => {});
 
-  const duracionTotal = Date.now() - inicioTest;
+  const duracion = Date.now() - inicio;
   log(`\n===== RESUMEN FINAL =====`);
-  log(`✅ Total completados (histórico): ${progreso.completados.length}`);
+  log(`✅ Total completados: ${progreso.completados.length}`);
   log(`❌ Fallidos en esta corrida: ${fallidosFinal.length}`);
-  log(`⏱️  Duración total de esta corrida: ${formatearDuracion(duracionTotal)}`);
+  log(`⏱️  Duración total: ${formatearDuracion(duracion)}`);
 
   if (fallidosFinal.length > 0) {
-    const csvContent = 'codigo,error\n' + fallidosFinal
+    const csv = 'codigo,error\n' + fallidosFinal
       .map(f => `"${f.codigo}","${f.error.replace(/"/g, '""')}"`)
       .join('\n');
-    fs.writeFileSync(CSV_FALLIDOS, csvContent);
-    log(`📄 Detalle de fallidos exportado a: ${CSV_FALLIDOS}`);
-    log(`Códigos fallidos: ${fallidosFinal.map(f => f.codigo).join(', ')}`);
+    fs.writeFileSync(CSV_FALLIDOS, csv);
+    log(`📄 Fallidos exportados a: ${CSV_FALLIDOS}`);
   }
 });

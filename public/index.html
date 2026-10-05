@@ -1,0 +1,616 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>SIESAM — Carga masiva de imágenes</title>
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            background: #f0f2f5;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 32px 16px
+        }
+
+        .card {
+            background: #fff;
+            border-radius: 12px;
+            box-shadow: 0 2px 12px rgba(0, 0, 0, .08);
+            padding: 32px;
+            width: 100%;
+            max-width: 720px;
+            margin-bottom: 20px
+        }
+
+        h1 {
+            font-size: 22px;
+            font-weight: 700;
+            color: #1a1a2e;
+            margin-bottom: 4px
+        }
+
+        .subtitle {
+            color: #666;
+            font-size: 14px;
+            margin-bottom: 28px
+        }
+
+        label {
+            display: block;
+            font-size: 13px;
+            font-weight: 600;
+            color: #444;
+            margin-bottom: 6px
+        }
+
+        input[type=text],
+        input[type=password],
+        input[type=url] {
+            width: 100%;
+            padding: 10px 14px;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            font-size: 14px;
+            margin-bottom: 16px;
+            outline: none;
+            transition: border-color .2s
+        }
+
+        input:focus {
+            border-color: #4f46e5
+        }
+
+        .row {
+            display: flex;
+            gap: 12px
+        }
+
+        .row>div {
+            flex: 1
+        }
+
+        .carpeta-row {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 16px;
+            align-items: center
+        }
+
+        .carpeta-row input {
+            flex: 1;
+            margin-bottom: 0
+        }
+
+        .btn-secundario {
+            padding: 10px 16px;
+            background: #f0f0f0;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 13px;
+            white-space: nowrap;
+            transition: background .2s
+        }
+
+        .btn-secundario:hover {
+            background: #e0e0e0
+        }
+
+        .toggle-row {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 20px;
+            font-size: 13px;
+            color: #555
+        }
+
+        .toggle-row input[type=checkbox] {
+            width: 16px;
+            height: 16px;
+            cursor: pointer;
+            accent-color: #4f46e5
+        }
+
+        .botones {
+            display: flex;
+            gap: 12px
+        }
+
+        .btn {
+            flex: 1;
+            padding: 12px;
+            border: none;
+            border-radius: 8px;
+            font-size: 15px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all .2s
+        }
+
+        .btn-iniciar {
+            background: #4f46e5;
+            color: #fff
+        }
+
+        .btn-iniciar:hover:not(:disabled) {
+            background: #4338ca
+        }
+
+        .btn-iniciar:disabled {
+            background: #a5b4fc;
+            cursor: not-allowed
+        }
+
+        .btn-detener {
+            background: #ef4444;
+            color: #fff
+        }
+
+        .btn-detener:hover:not(:disabled) {
+            background: #dc2626
+        }
+
+        .btn-detener:disabled {
+            background: #fca5a5;
+            cursor: not-allowed
+        }
+
+        .progreso-card {
+            display: none
+        }
+
+        .progreso-card.visible {
+            display: block
+        }
+
+        .stats {
+            display: flex;
+            gap: 12px;
+            margin-bottom: 16px
+        }
+
+        .stat {
+            flex: 1;
+            background: #f8f9fa;
+            border-radius: 8px;
+            padding: 14px;
+            text-align: center
+        }
+
+        .stat-numero {
+            font-size: 28px;
+            font-weight: 700;
+            color: #1a1a2e
+        }
+
+        .stat-numero.verde {
+            color: #16a34a
+        }
+
+        .stat-numero.rojo {
+            color: #dc2626
+        }
+
+        .stat-numero.azul {
+            color: #4f46e5
+        }
+
+        .stat-label {
+            font-size: 12px;
+            color: #888;
+            margin-top: 2px
+        }
+
+        .barra-container {
+            background: #f0f0f0;
+            border-radius: 99px;
+            height: 10px;
+            margin-bottom: 8px;
+            overflow: hidden
+        }
+
+        .barra {
+            height: 100%;
+            background: linear-gradient(90deg, #4f46e5, #7c3aed);
+            border-radius: 99px;
+            transition: width .4s ease;
+            width: 0
+        }
+
+        .barra-texto {
+            font-size: 12px;
+            color: #888;
+            text-align: right;
+            margin-bottom: 16px
+        }
+
+        .log-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 8px
+        }
+
+        .log-titulo {
+            font-size: 13px;
+            font-weight: 600;
+            color: #444
+        }
+
+        .btn-limpiar {
+            font-size: 12px;
+            color: #888;
+            background: none;
+            border: none;
+            cursor: pointer;
+            text-decoration: underline
+        }
+
+        #log {
+            background: #1a1a2e;
+            color: #a5f3a5;
+            font-family: 'Courier New', monospace;
+            font-size: 12px;
+            padding: 16px;
+            border-radius: 8px;
+            height: 320px;
+            overflow-y: auto;
+            white-space: pre-wrap;
+            word-break: break-all
+        }
+
+        .log-error {
+            color: #f87171
+        }
+
+        .log-ok {
+            color: #4ade80
+        }
+
+        .log-warn {
+            color: #fbbf24
+        }
+
+        .log-info {
+            color: #93c5fd
+        }
+
+        .log-resumen {
+            color: #e879f9
+        }
+
+        .badge {
+            display: inline-block;
+            padding: 3px 10px;
+            border-radius: 99px;
+            font-size: 12px;
+            font-weight: 600;
+            margin-left: 10px
+        }
+
+        .badge-activo {
+            background: #dcfce7;
+            color: #16a34a
+        }
+
+        .badge-detenido {
+            background: #f1f5f9;
+            color: #94a3b8
+        }
+
+        .descarga {
+            margin-top: 16px;
+            text-align: center;
+            display: none
+        }
+
+        .btn-descarga {
+            display: inline-block;
+            padding: 10px 24px;
+            background: #16a34a;
+            color: #fff;
+            border-radius: 8px;
+            font-size: 14px;
+            font-weight: 600;
+            text-decoration: none;
+            border: none;
+            cursor: pointer
+        }
+
+        .btn-descarga:hover {
+            background: #15803d
+        }
+
+        #inputCarpeta {
+            display: none
+        }
+
+        .separador {
+            border: none;
+            border-top: 1px solid #f0f0f0;
+            margin: 20px 0
+        }
+
+        .hint {
+            font-size: 12px;
+            color: #999;
+            margin-top: -12px;
+            margin-bottom: 16px
+        }
+    </style>
+</head>
+
+<body>
+
+    <div class="card">
+        <h1>🖼️ SIESAM — Carga masiva de imágenes</h1>
+        <p class="subtitle">Completa los datos del cliente y selecciona la carpeta con las imágenes para iniciar la
+            subida automática.</p>
+
+        <label>URL del sistema SIESAM del cliente</label>
+        <input type="url" id="url" placeholder="https://app16.siesam.com.bo/?nombre-cliente/#/" />
+
+        <div class="row">
+            <div>
+                <label>Usuario</label>
+                <input type="text" id="usuario" placeholder="correo@siesam.com.bo" />
+            </div>
+            <div>
+                <label>Contraseña</label>
+                <input type="password" id="clave" placeholder="••••••••" />
+            </div>
+        </div>
+
+        <label>Carpeta de imágenes</label>
+        <div class="carpeta-row">
+            <input type="text" id="carpetaTexto" placeholder="Haz clic en 'Elegir carpeta'..." readonly />
+            <button class="btn-secundario" onclick="elegirCarpeta()">📂 Elegir carpeta</button>
+        </div>
+        <input type="file" id="inputCarpeta" webkitdirectory multiple onchange="procesarCarpeta(this)" />
+        <p class="hint">Se detectarán automáticamente los archivos .jpg, .png y .jpeg dentro de la carpeta.</p>
+
+        <hr class="separador" />
+
+        <div class="toggle-row">
+            <input type="checkbox" id="mostrarNavegador" checked />
+            <label for="mostrarNavegador" style="margin-bottom:0;font-weight:400">
+                Mostrar el navegador mientras trabaja (desactívalo para correr en segundo plano)
+            </label>
+        </div>
+
+        <div class="toggle-row">
+            <input type="checkbox" id="reiniciar" />
+            <label for="reiniciar" style="margin-bottom:0;font-weight:400">
+                Empezar desde cero (ignora el progreso guardado de corridas anteriores)
+            </label>
+        </div>
+
+        <div class="botones">
+            <button class="btn btn-iniciar" id="btnIniciar" onclick="iniciar()">▶ Iniciar subida</button>
+            <button class="btn btn-detener" id="btnDetener" onclick="detener()" disabled>⛔ Detener</button>
+        </div>
+    </div>
+
+    <div class="card progreso-card" id="progresoCard">
+        <div style="display:flex;align-items:center;margin-bottom:16px">
+            <span style="font-size:15px;font-weight:700;color:#1a1a2e">Progreso</span>
+            <span class="badge badge-detenido" id="estadoBadge">Detenido</span>
+        </div>
+
+        <div class="stats">
+            <div class="stat">
+                <div class="stat-numero azul" id="statTotal">0</div>
+                <div class="stat-label">Total imágenes</div>
+            </div>
+            <div class="stat">
+                <div class="stat-numero verde" id="statExitosas">0</div>
+                <div class="stat-label">✅ Completadas</div>
+            </div>
+            <div class="stat">
+                <div class="stat-numero rojo" id="statFallidas">0</div>
+                <div class="stat-label">❌ Fallidas</div>
+            </div>
+        </div>
+
+        <div class="barra-container">
+            <div class="barra" id="barra"></div>
+        </div>
+        <div class="barra-texto" id="barraTexto">0 / 0</div>
+
+        <div class="log-header">
+            <span class="log-titulo">📋 Log en tiempo real</span>
+            <button class="btn-limpiar" onclick="limpiarLog()">Limpiar</button>
+        </div>
+        <div id="log"></div>
+
+        <div class="descarga" id="descargaFallidos">
+            <button class="btn-descarga" onclick="descargarFallidos()">⬇ Descargar CSV de fallidos</button>
+        </div>
+    </div>
+
+    <script>
+        let totalImagenes = 0;
+        let exitosas = 0;
+        let fallidas = 0;
+        let eventoSource = null;
+        let carpetaNombre = '';
+
+        // ==================== CARPETA ====================
+        function elegirCarpeta() {
+            document.getElementById('inputCarpeta').click();
+        }
+
+        function procesarCarpeta(input) {
+            const archivos = Array.from(input.files);
+            const imagenes = archivos.filter(f =>
+                f.name.endsWith('.jpg') || f.name.endsWith('.png') || f.name.endsWith('.jpeg')
+            );
+
+            if (imagenes.length === 0) {
+                alert('No se encontraron imágenes (.jpg, .png, .jpeg) en la carpeta seleccionada.');
+                return;
+            }
+
+            carpetaNombre = imagenes[0].webkitRelativePath.split('/')[0];
+            totalImagenes = imagenes.length;
+
+            document.getElementById('carpetaTexto').value =
+                `${carpetaNombre}  (${imagenes.length} imágenes encontradas)`;
+            document.getElementById('statTotal').textContent = totalImagenes;
+        }
+
+        // ==================== INICIAR ====================
+        async function iniciar() {
+            const url = document.getElementById('url').value.trim();
+            const usuario = document.getElementById('usuario').value.trim();
+            const clave = document.getElementById('clave').value.trim();
+            const mostrarNavegador = document.getElementById('mostrarNavegador').checked;
+            const reiniciar = document.getElementById('reiniciar').checked;
+
+            if (!url || !usuario || !clave || !carpetaNombre) {
+                alert('Por favor completa todos los campos y selecciona la carpeta de imágenes.');
+                return;
+            }
+
+            const resp = await fetch('/iniciar', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ url, usuario, clave, carpeta: carpetaNombre, mostrarNavegador, reiniciar }),
+            });
+
+            if (!resp.ok) {
+                const err = await resp.json();
+                alert(`Error: ${err.error}`);
+                return;
+            }
+
+            document.getElementById('progresoCard').classList.add('visible');
+            document.getElementById('btnIniciar').disabled = true;
+            document.getElementById('btnDetener').disabled = false;
+            document.getElementById('estadoBadge').textContent = 'En curso';
+            document.getElementById('estadoBadge').className = 'badge badge-activo';
+            document.getElementById('descargaFallidos').style.display = 'none';
+
+            exitosas = 0;
+            fallidas = 0;
+            actualizarStats();
+            limpiarLog();
+            conectarLog();
+        }
+
+        // ==================== DETENER ====================
+        async function detener() {
+            await fetch('/detener', { method: 'POST' });
+        }
+
+        // ==================== LOG EN TIEMPO REAL ====================
+        function conectarLog() {
+            if (eventoSource) eventoSource.close();
+            eventoSource = new EventSource('/logs');
+
+            eventoSource.onmessage = (e) => {
+                const { mensaje } = JSON.parse(e.data);
+                if (mensaje === '__FIN__') { finalizarProceso(); return; }
+                agregarLog(mensaje);
+                parsearEstado(mensaje);
+            };
+        }
+
+        function agregarLog(texto) {
+            const div = document.getElementById('log');
+            const linea = document.createElement('div');
+
+            if (texto.includes('❌') || texto.toLowerCase().includes('falló') || texto.toLowerCase().includes('error')) {
+                linea.className = 'log-error';
+            } else if (texto.includes('✅')) {
+                linea.className = 'log-ok';
+            } else if (texto.includes('⚠️') || texto.includes('♻️') || texto.includes('🔄')) {
+                linea.className = 'log-warn';
+            } else if (texto.includes('📊') || texto.includes('===')) {
+                linea.className = 'log-resumen';
+            } else if (texto.includes('🚀') || texto.includes('📸') || texto.includes('📝')) {
+                linea.className = 'log-info';
+            }
+
+            linea.textContent = texto;
+            div.appendChild(linea);
+            div.scrollTop = div.scrollHeight;
+        }
+
+        function parsearEstado(texto) {
+            if (texto.includes('✅') && texto.includes('completado')) {
+                exitosas++;
+                actualizarStats();
+            }
+            const matchFallidas = texto.match(/❌ Fallidos en esta corrida: (\d+)/);
+            if (matchFallidas) {
+                fallidas = parseInt(matchFallidas[1]);
+                actualizarStats();
+            }
+        }
+
+        function actualizarStats() {
+            document.getElementById('statExitosas').textContent = exitosas;
+            document.getElementById('statFallidas').textContent = fallidas;
+
+            if (totalImagenes > 0) {
+                const pct = Math.min(100, Math.round((exitosas / totalImagenes) * 100));
+                document.getElementById('barra').style.width = pct + '%';
+                document.getElementById('barraTexto').textContent = `${exitosas} / ${totalImagenes} (${pct}%)`;
+            }
+        }
+
+        function finalizarProceso() {
+            document.getElementById('btnIniciar').disabled = false;
+            document.getElementById('btnDetener').disabled = true;
+            document.getElementById('estadoBadge').textContent = 'Finalizado';
+            document.getElementById('estadoBadge').className = 'badge badge-detenido';
+
+            if (fallidas > 0) {
+                document.getElementById('descargaFallidos').style.display = 'block';
+            }
+
+            if (eventoSource) { eventoSource.close(); eventoSource = null; }
+        }
+
+        function limpiarLog() {
+            document.getElementById('log').innerHTML = '';
+        }
+
+        function descargarFallidos() {
+            window.location.href = '/fallidos';
+        }
+
+        // Al cargar la página, revisar si ya hay proceso activo
+        window.addEventListener('load', async () => {
+            const estado = await fetch('/estado').then(r => r.json());
+            if (estado.activo) {
+                document.getElementById('progresoCard').classList.add('visible');
+                document.getElementById('btnIniciar').disabled = true;
+                document.getElementById('btnDetener').disabled = false;
+                document.getElementById('estadoBadge').textContent = 'En curso';
+                document.getElementById('estadoBadge').className = 'badge badge-activo';
+                conectarLog();
+            }
+
+            const progreso = await fetch('/progreso').then(r => r.json());
+            if (progreso.completados > 0) {
+                exitosas = progreso.completados;
+                actualizarStats();
+            }
+        });
+    </script>
+</body>
+
+</html>
