@@ -4,3 +4,12 @@ node_modules/
 .env.local
 .env.development.local
 test-results/
+
+progreso_subida.json
+fallidos_final.csv
+config_actual.json
+log_subida_*.txt
+error_*.png
+
+test-results/
+playwright-report/
