@@ -166,7 +166,7 @@ test('Automatización: Carga masiva de imágenes SIESAM', async () => {
     .filter(f => f.endsWith('.jpg') || f.endsWith('.png') || f.endsWith('.jpeg'));
 
   log(`📸 ${files.length} imágenes encontradas en: ${IMAGES_DIR}`);
-  log(`🖥️  Navegador: ${MOSTRAR_NAVEGADOR ? 'visible' : 'segundo plano'}`);
+  log(`🖥️  Navegador: ${MOSTRAR_NAVEGADOR ? 'visible' : 'minimizado'}`);
   log(`📝 Log: ${LOG_FILE}`);
 
   const progreso    = cargarProgreso();
