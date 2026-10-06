@@ -57,9 +57,10 @@ function codigoAPatronFlexible(codigo) {
 
 // ==================== SESIÓN ====================
 async function abrirSesion(browser) {
-  const context = await browser.newContext();
+   const context = await browser.newContext({
+    viewport: { width: 1440, height: 900 },
+  });
   const page    = await context.newPage();
-
   // Aplica zoom del 90% a nivel de página
   await page.addInitScript(() => {
     document.documentElement.style.zoom = '0.9';
