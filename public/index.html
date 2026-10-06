@@ -4,7 +4,7 @@
 <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>SIESAM — Carga masiva de imágenes</title>
+    <title>SIESAM — Carga de imágenes</title>
     <style>
         * {
             box-sizing: border-box;
@@ -37,6 +37,13 @@
             font-weight: 700;
             color: #1a1a2e;
             margin-bottom: 4px
+        }
+
+        h2 {
+            font-size: 16px;
+            font-weight: 700;
+            color: #1a1a2e;
+            margin-bottom: 16px
         }
 
         .subtitle {
@@ -91,7 +98,6 @@
             flex: 1
         }
 
-        /* Campo contraseña con ojito */
         .password-wrap {
             position: relative;
             margin-bottom: 16px
@@ -140,21 +146,6 @@
         .carpeta-row input {
             flex: 1;
             margin-bottom: 0
-        }
-
-        .btn-secundario {
-            padding: 10px 16px;
-            background: #f0f0f0;
-            border: 1px solid #ddd;
-            border-radius: 8px;
-            cursor: pointer;
-            font-size: 13px;
-            white-space: nowrap;
-            transition: background .2s
-        }
-
-        .btn-secundario:hover {
-            background: #e0e0e0
         }
 
         .hint {
@@ -373,7 +364,7 @@
             color: #444
         }
 
-        .btn-limpiar {
+        .btn-limpiar-log {
             font-size: 12px;
             color: #888;
             background: none;
@@ -477,21 +468,181 @@
             background: #a5b4fc;
             cursor: not-allowed
         }
+
+        /* ===== LIMPIEZA ===== */
+        .limpieza-card {}
+
+        .archivos-lista {
+            margin-bottom: 16px
+        }
+
+        .archivo-item {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 10px 12px;
+            border: 1px solid #e5e7eb;
+            border-radius: 8px;
+            margin-bottom: 8px;
+            font-size: 13px;
+            transition: background .2s
+        }
+
+        .archivo-item:hover {
+            background: #f8f9fa
+        }
+
+        .archivo-item input[type=checkbox] {
+            width: 16px;
+            height: 16px;
+            cursor: pointer;
+            accent-color: #ef4444
+        }
+
+        .archivo-nombre {
+            flex: 1;
+            color: #1a1a2e;
+            font-weight: 500;
+            word-break: break-all
+        }
+
+        .archivo-meta {
+            font-size: 11px;
+            color: #999;
+            white-space: nowrap;
+            text-align: right
+        }
+
+        .archivo-tipo {
+            font-size: 11px;
+            padding: 2px 8px;
+            border-radius: 99px;
+            white-space: nowrap
+        }
+
+        .tipo-log {
+            background: #eff6ff;
+            color: #3b82f6
+        }
+
+        .tipo-error {
+            background: #fef2f2;
+            color: #ef4444
+        }
+
+        .tipo-json {
+            background: #f0fdf4;
+            color: #16a34a
+        }
+
+        .tipo-csv {
+            background: #fefce8;
+            color: #ca8a04
+        }
+
+        .tipo-config {
+            background: #faf5ff;
+            color: #9333ea
+        }
+
+        .limpieza-acciones {
+            display: flex;
+            gap: 10px;
+            align-items: center;
+            flex-wrap: wrap
+        }
+
+        .btn-seleccionar-todo {
+            font-size: 13px;
+            color: #4f46e5;
+            background: none;
+            border: none;
+            cursor: pointer;
+            text-decoration: underline;
+            padding: 0
+        }
+
+        .btn-deseleccionar {
+            font-size: 13px;
+            color: #888;
+            background: none;
+            border: none;
+            cursor: pointer;
+            text-decoration: underline;
+            padding: 0
+        }
+
+        .btn-borrar {
+            padding: 10px 20px;
+            background: #ef4444;
+            color: #fff;
+            border: none;
+            border-radius: 8px;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: background .2s
+        }
+
+        .btn-borrar:hover:not(:disabled) {
+            background: #dc2626
+        }
+
+        .btn-borrar:disabled {
+            background: #fca5a5;
+            cursor: not-allowed
+        }
+
+        .btn-recargar {
+            padding: 10px 16px;
+            background: #f0f0f0;
+            border: 1px solid #ddd;
+            color: #444;
+            border-radius: 8px;
+            font-size: 13px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: background .2s
+        }
+
+        .btn-recargar:hover {
+            background: #e0e0e0
+        }
+
+        .sin-archivos {
+            text-align: center;
+            color: #888;
+            font-size: 14px;
+            padding: 24px 0
+        }
+
+        .limpieza-feedback {
+            margin-top: 12px;
+            font-size: 13px;
+            font-weight: 600
+        }
+
+        .limpieza-feedback.ok {
+            color: #16a34a
+        }
+
+        .limpieza-feedback.err {
+            color: #ef4444
+        }
     </style>
 </head>
 
 <body>
 
+    <!-- ===== FORMULARIO PRINCIPAL ===== -->
     <div class="card">
-        <h1>🖼️ SIESAM — Carga masiva de imágenes</h1>
+        <h1>SIESAM — Carga de imágenes</h1>
         <p class="subtitle">Completa los datos del cliente y la carpeta de imágenes para iniciar la subida automática.
         </p>
 
-        <!-- URL -->
         <label>URL del sistema SIESAM del cliente</label>
         <input type="url" id="url" placeholder="https://app16.siesam.com.bo/?nombre-cliente/#/" class="mb" />
 
-        <!-- Usuario y clave -->
         <div class="row">
             <div>
                 <label>Usuario</label>
@@ -506,16 +657,12 @@
             </div>
         </div>
 
-        <!-- Carpeta -->
         <label>Carpeta de imágenes</label>
-
-        <!-- Tabs Mac / Windows -->
         <div class="tabs">
             <button class="tab active" onclick="cambiarOS('mac', this)">🍎 Mac</button>
             <button class="tab" onclick="cambiarOS('win', this)">🪟 Windows</button>
         </div>
 
-        <!-- Instrucciones Mac -->
         <div class="instrucciones" id="instrMac">
             <strong>Cómo obtener la ruta en Mac:</strong><br>
             1. Abre <strong>Finder</strong> y navega hasta tu carpeta de imágenes.<br>
@@ -525,7 +672,6 @@
             4. Pégalo en el campo de abajo y haz clic en <strong>Verificar</strong>.
         </div>
 
-        <!-- Instrucciones Windows -->
         <div class="instrucciones" id="instrWin" style="display:none">
             <strong>Cómo obtener la ruta en Windows:</strong><br>
             1. Abre el <strong>Explorador de archivos</strong> y navega hasta tu carpeta de imágenes.<br>
@@ -535,7 +681,6 @@
             4. Pégala en el campo de abajo y haz clic en <strong>Verificar</strong>.
         </div>
 
-        <!-- Input ruta + verificar -->
         <div class="carpeta-row" style="margin-top:12px">
             <input type="text" id="carpetaRuta" placeholder="Pega aquí la ruta completa de la carpeta..."
                 oninput="resetVerificacion()" />
@@ -568,7 +713,7 @@
         </p>
     </div>
 
-    <!-- PROGRESO -->
+    <!-- ===== PROGRESO ===== -->
     <div class="card progreso-card" id="progresoCard">
         <div style="display:flex;align-items:center;margin-bottom:16px">
             <span style="font-size:15px;font-weight:700;color:#1a1a2e">Progreso</span>
@@ -597,13 +742,35 @@
 
         <div class="log-header">
             <span class="log-titulo">📋 Log en tiempo real</span>
-            <button class="btn-limpiar" onclick="limpiarLog()">Limpiar</button>
+            <button class="btn-limpiar-log" onclick="limpiarLog()">Limpiar</button>
         </div>
         <div id="log"></div>
 
         <div class="descarga" id="descargaFallidos">
             <button class="btn-descarga" onclick="descargarFallidos()">⬇ Descargar CSV de fallidos</button>
         </div>
+    </div>
+
+    <!-- ===== LIMPIEZA DE ARCHIVOS ===== -->
+    <div class="card limpieza-card">
+        <h2>🗑️ Limpieza de archivos</h2>
+        <p class="hint" style="margin-bottom:16px">
+            Selecciona los archivos que quieres eliminar del proyecto.
+            Los logs y capturas de error se acumulan con el tiempo — límpialo cuando quieras.
+        </p>
+
+        <div id="archivosLista" class="archivos-lista">
+            <div class="sin-archivos">Cargando archivos...</div>
+        </div>
+
+        <div class="limpieza-acciones">
+            <button class="btn-seleccionar-todo" onclick="seleccionarTodo()">Seleccionar todo</button>
+            <button class="btn-deseleccionar" onclick="deseleccionarTodo()">Deseleccionar todo</button>
+            <button class="btn-recargar" onclick="cargarArchivos()">🔄 Recargar lista</button>
+            <button class="btn-borrar" id="btnBorrar" onclick="borrarSeleccionados()" disabled>🗑️ Borrar
+                seleccionados</button>
+        </div>
+        <div id="limpiezaFeedback" class="limpieza-feedback"></div>
     </div>
 
     <script>
@@ -613,7 +780,7 @@
         let eventoSource = null;
         let carpetaVerificada = '';
 
-        // ==================== OJITO CONTRASEÑA ====================
+        // ==================== OJITO ====================
         function togglePassword() {
             const input = document.getElementById('clave');
             const btn = document.getElementById('btnOjo');
@@ -626,7 +793,7 @@
             }
         }
 
-        // ==================== TABS MAC / WINDOWS ====================
+        // ==================== TABS ====================
         function cambiarOS(os, tabEl) {
             document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
             tabEl.classList.add('active');
@@ -638,10 +805,7 @@
         // ==================== VERIFICAR CARPETA ====================
         async function verificarCarpeta() {
             const ruta = document.getElementById('carpetaRuta').value.trim();
-            if (!ruta) {
-                mostrarFeedback('Pega la ruta de la carpeta primero.', 'error');
-                return;
-            }
+            if (!ruta) { mostrarFeedback('Pega la ruta de la carpeta primero.', 'error'); return; }
 
             const btn = document.getElementById('btnVerificar');
             btn.disabled = true;
@@ -696,15 +860,8 @@
             const mostrarNavegador = document.getElementById('mostrarNavegador').checked;
             const reiniciar = document.getElementById('reiniciar').checked;
 
-            if (!url || !usuario || !clave) {
-                alert('Por favor completa la URL, usuario y contraseña.');
-                return;
-            }
-
-            if (!carpetaVerificada) {
-                alert('Primero verifica la carpeta de imágenes.');
-                return;
-            }
+            if (!url || !usuario || !clave) { alert('Completa la URL, usuario y contraseña.'); return; }
+            if (!carpetaVerificada) { alert('Primero verifica la carpeta de imágenes.'); return; }
 
             const resp = await fetch('/iniciar', {
                 method: 'POST',
@@ -712,11 +869,7 @@
                 body: JSON.stringify({ url, usuario, clave, carpeta: carpetaVerificada, mostrarNavegador, reiniciar }),
             });
 
-            if (!resp.ok) {
-                const err = await resp.json();
-                alert(`Error: ${err.error}`);
-                return;
-            }
+            if (!resp.ok) { const err = await resp.json(); alert(`Error: ${err.error}`); return; }
 
             document.getElementById('progresoCard').classList.add('visible');
             document.getElementById('btnIniciar').disabled = true;
@@ -732,17 +885,15 @@
         }
 
         // ==================== DETENER ====================
-        async function detener() {
-            await fetch('/detener', { method: 'POST' });
-        }
+        async function detener() { await fetch('/detener', { method: 'POST' }); }
 
-        // ==================== LOG EN TIEMPO REAL ====================
+        // ==================== LOG ====================
         function conectarLog() {
             if (eventoSource) eventoSource.close();
             eventoSource = new EventSource('/logs');
             eventoSource.onmessage = (e) => {
                 const { mensaje } = JSON.parse(e.data);
-                if (mensaje === '__FIN__') { finalizarProceso(); return; }
+                if (mensaje === '__FIN__') { finalizarProceso(); cargarArchivos(); return; }
                 agregarLog(mensaje);
                 parsearEstado(mensaje);
             };
@@ -751,29 +902,18 @@
         function agregarLog(texto) {
             const div = document.getElementById('log');
             const linea = document.createElement('div');
-
-            if (texto.includes('❌') || texto.toLowerCase().includes('falló') || texto.toLowerCase().includes('error')) {
-                linea.className = 'log-error';
-            } else if (texto.includes('✅')) {
-                linea.className = 'log-ok';
-            } else if (texto.includes('⚠️') || texto.includes('♻️') || texto.includes('🔄')) {
-                linea.className = 'log-warn';
-            } else if (texto.includes('📊') || texto.includes('===')) {
-                linea.className = 'log-resumen';
-            } else if (texto.includes('🚀') || texto.includes('📸') || texto.includes('📝')) {
-                linea.className = 'log-info';
-            }
-
+            if (texto.includes('❌') || texto.toLowerCase().includes('falló') || texto.toLowerCase().includes('error')) linea.className = 'log-error';
+            else if (texto.includes('✅')) linea.className = 'log-ok';
+            else if (texto.includes('⚠️') || texto.includes('♻️') || texto.includes('🔄')) linea.className = 'log-warn';
+            else if (texto.includes('📊') || texto.includes('===')) linea.className = 'log-resumen';
+            else if (texto.includes('🚀') || texto.includes('📸') || texto.includes('📝')) linea.className = 'log-info';
             linea.textContent = texto;
             div.appendChild(linea);
             div.scrollTop = div.scrollHeight;
         }
 
         function parsearEstado(texto) {
-            if (texto.includes('✅') && texto.includes('completado')) {
-                exitosas++;
-                actualizarStats();
-            }
+            if (texto.includes('✅') && texto.includes('completado')) { exitosas++; actualizarStats(); }
             const m = texto.match(/❌ Fallidos en esta corrida: (\d+)/);
             if (m) { fallidas = parseInt(m[1]); actualizarStats(); }
         }
@@ -800,7 +940,94 @@
         function limpiarLog() { document.getElementById('log').innerHTML = ''; }
         function descargarFallidos() { window.location.href = '/fallidos'; }
 
-        // Al cargar la página, revisar si ya hay proceso activo
+        // ==================== LIMPIEZA DE ARCHIVOS ====================
+        function tipoArchivo(nombre) {
+            if (nombre.startsWith('log_')) return { label: 'Log', clase: 'tipo-log' };
+            if (nombre.startsWith('error_')) return { label: 'Captura', clase: 'tipo-error' };
+            if (nombre === 'progreso_subida.json') return { label: 'Progreso', clase: 'tipo-json' };
+            if (nombre === 'fallidos_final.csv') return { label: 'Fallidos', clase: 'tipo-csv' };
+            if (nombre === 'config_actual.json') return { label: 'Config', clase: 'tipo-config' };
+            return { label: 'Archivo', clase: '' };
+        }
+
+        async function cargarArchivos() {
+            const lista = document.getElementById('archivosLista');
+            lista.innerHTML = '<div class="sin-archivos">Cargando...</div>';
+            document.getElementById('limpiezaFeedback').textContent = '';
+
+            const data = await fetch('/archivos').then(r => r.json());
+
+            if (data.archivos.length === 0) {
+                lista.innerHTML = '<div class="sin-archivos">✅ No hay archivos para limpiar.</div>';
+                document.getElementById('btnBorrar').disabled = true;
+                return;
+            }
+
+            lista.innerHTML = data.archivos.map(a => {
+                const tipo = tipoArchivo(a.nombre);
+                return `
+        <div class="archivo-item">
+          <input type="checkbox" class="check-archivo" value="${a.nombre}" onchange="actualizarBtnBorrar()"/>
+          <span class="archivo-nombre">${a.nombre}</span>
+          <span class="archivo-tipo ${tipo.clase}">${tipo.label}</span>
+          <span class="archivo-meta">${a.tamaño}<br>${a.fecha}</span>
+        </div>
+      `;
+            }).join('');
+
+            actualizarBtnBorrar();
+        }
+
+        function seleccionarTodo() {
+            document.querySelectorAll('.check-archivo').forEach(c => c.checked = true);
+            actualizarBtnBorrar();
+        }
+
+        function deseleccionarTodo() {
+            document.querySelectorAll('.check-archivo').forEach(c => c.checked = false);
+            actualizarBtnBorrar();
+        }
+
+        function actualizarBtnBorrar() {
+            const seleccionados = document.querySelectorAll('.check-archivo:checked').length;
+            const btn = document.getElementById('btnBorrar');
+            btn.disabled = seleccionados === 0;
+            btn.textContent = seleccionados > 0
+                ? `🗑️ Borrar ${seleccionados} archivo${seleccionados > 1 ? 's' : ''}`
+                : '🗑️ Borrar seleccionados';
+        }
+
+        async function borrarSeleccionados() {
+            const seleccionados = Array.from(document.querySelectorAll('.check-archivo:checked'))
+                .map(c => c.value);
+
+            if (seleccionados.length === 0) return;
+
+            const confirmar = confirm(
+                `¿Estás seguro de que quieres borrar ${seleccionados.length} archivo${seleccionados.length > 1 ? 's' : ''}?\n\nEsta acción no se puede deshacer.`
+            );
+            if (!confirmar) return;
+
+            const resp = await fetch('/limpiar', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ archivos: seleccionados }),
+            });
+
+            const data = await resp.json();
+            const feedback = document.getElementById('limpiezaFeedback');
+
+            if (data.ok) {
+                feedback.textContent = `✅ ${data.borrados.length} archivo${data.borrados.length > 1 ? 's' : ''} eliminado${data.borrados.length > 1 ? 's' : ''} correctamente.`;
+                feedback.className = 'limpieza-feedback ok';
+                await cargarArchivos();
+            } else {
+                feedback.textContent = `❌ Error al borrar: ${data.errores.join(', ')}`;
+                feedback.className = 'limpieza-feedback err';
+            }
+        }
+
+        // ==================== CARGA INICIAL ====================
         window.addEventListener('load', async () => {
             const estado = await fetch('/estado').then(r => r.json());
             if (estado.activo) {
@@ -812,10 +1039,9 @@
                 conectarLog();
             }
             const progreso = await fetch('/progreso').then(r => r.json());
-            if (progreso.completados > 0) {
-                exitosas = progreso.completados;
-                actualizarStats();
-            }
+            if (progreso.completados > 0) { exitosas = progreso.completados; actualizarStats(); }
+
+            cargarArchivos();
         });
     </script>
 </body>

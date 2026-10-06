@@ -34,13 +34,11 @@ function enviarLog(mensaje) {
 let procesoActivo = null;
 
 // ==================== VERIFICAR CARPETA ====================
-// El navegador no puede darnos la ruta absoluta directamente por seguridad,
-// así que el usuario la escribe/pega y nosotros la verificamos desde el servidor
 app.post('/verificar-carpeta', (req, res) => {
   const { carpeta } = req.body;
   if (!carpeta) return res.status(400).json({ error: 'Ruta vacía.' });
 
-  const rutaLimpia = carpeta.trim().replace(/^["']|["']$/g, ''); // quita comillas si las hay
+  const rutaLimpia = carpeta.trim().replace(/^["']|["']$/g, '');
 
   if (!fs.existsSync(rutaLimpia)) {
     return res.json({ ok: false, error: `No se encontró la carpeta: ${rutaLimpia}` });
@@ -76,11 +74,9 @@ app.post('/iniciar', (req, res) => {
     return res.status(400).json({ error: `La carpeta no existe: ${rutaLimpia}` });
   }
 
-  // Guardar config para que la lea el spec
   const config = { url, usuario, clave, carpeta: rutaLimpia, mostrarNavegador: !!mostrarNavegador };
   fs.writeFileSync(path.join(__dirname, 'config_actual.json'), JSON.stringify(config, null, 2));
 
-  // Borrar progreso anterior si se pidió
   const progressFile = path.join(__dirname, 'progreso_subida.json');
   if (reiniciar && fs.existsSync(progressFile)) {
     fs.unlinkSync(progressFile);
@@ -89,7 +85,6 @@ app.post('/iniciar', (req, res) => {
 
   res.json({ ok: true });
 
-  // Lanzar Playwright como proceso hijo
   const cmd = process.platform === 'win32' ? 'npx.cmd' : 'npx';
   procesoActivo = spawn(cmd, ['playwright', 'test', 'tests/subida.spec.js', '--headed'], {
     cwd: __dirname,
@@ -150,6 +145,72 @@ app.get('/fallidos', (req, res) => {
   } else {
     res.status(404).json({ error: 'No hay archivo de fallidos aún.' });
   }
+});
+
+// ==================== LISTAR ARCHIVOS PARA LIMPIAR ====================
+app.get('/archivos', (req, res) => {
+  const patrones = [
+    /^log_subida_.*\.txt$/,
+    /^error_.*\.png$/,
+    /^progreso_subida\.json$/,
+    /^fallidos_final\.csv$/,
+    /^config_actual\.json$/,
+  ];
+
+  const archivos = fs.readdirSync(__dirname)
+    .filter(f => patrones.some(p => p.test(f)))
+    .map(f => {
+      const ruta = path.join(__dirname, f);
+      const { size, mtimeMs } = fs.statSync(ruta);
+      return {
+        nombre: f,
+        tamaño: (size / 1024).toFixed(1) + ' KB',
+        fecha: new Date(mtimeMs).toLocaleString('es-BO'),
+      };
+    })
+    .sort((a, b) => a.nombre.localeCompare(b.nombre));
+
+  res.json({ archivos });
+});
+
+// ==================== LIMPIAR ARCHIVOS SELECCIONADOS ====================
+app.post('/limpiar', (req, res) => {
+  if (procesoActivo) {
+    return res.status(400).json({ error: 'No puedes limpiar mientras hay un proceso activo.' });
+  }
+
+  const { archivos } = req.body;
+  if (!archivos || archivos.length === 0) {
+    return res.status(400).json({ error: 'No se seleccionaron archivos.' });
+  }
+
+  // Patrones permitidos para borrar (seguridad: no se puede borrar cualquier archivo)
+  const patronesPermitidos = [
+    /^log_subida_.*\.txt$/,
+    /^error_.*\.png$/,
+    /^progreso_subida\.json$/,
+    /^fallidos_final\.csv$/,
+    /^config_actual\.json$/,
+  ];
+
+  const borrados = [];
+  const errores = [];
+
+  archivos.forEach(nombre => {
+    const esPermitido = patronesPermitidos.some(p => p.test(nombre));
+    if (!esPermitido) {
+      errores.push(`${nombre}: no permitido`);
+      return;
+    }
+
+    const ruta = path.join(__dirname, nombre);
+    if (fs.existsSync(ruta)) {
+      fs.unlinkSync(ruta);
+      borrados.push(nombre);
+    }
+  });
+
+  res.json({ ok: true, borrados, errores });
 });
 
 app.listen(PORT, () => {
