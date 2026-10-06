@@ -690,12 +690,12 @@
 
         <hr class="separador" />
 
-        <div class="toggle-row">
+        <!--         <div class="toggle-row">
             <input type="checkbox" id="mostrarNavegador" checked />
             <label for="mostrarNavegador" style="margin-bottom:0;font-weight:400">
                 Mostrar el navegador mientras trabaja (desactívalo para minimizarlo automáticamente)
             </label>
-        </div>
+        </div> -->
 
         <div class="toggle-row">
             <input type="checkbox" id="reiniciar" />
@@ -857,7 +857,8 @@
             const url = document.getElementById('url').value.trim();
             const usuario = document.getElementById('usuario').value.trim();
             const clave = document.getElementById('clave').value.trim();
-            const mostrarNavegador = document.getElementById('mostrarNavegador').checked;
+            //const mostrarNavegador = document.getElementById('mostrarNavegador').checked;
+            const mostrarNavegador = true;
             const reiniciar = document.getElementById('reiniciar').checked;
 
             if (!url || !usuario || !clave) { alert('Completa la URL, usuario y contraseña.'); return; }

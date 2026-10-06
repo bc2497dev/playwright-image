@@ -16,7 +16,8 @@ const CONFIG = JSON.parse(fs.readFileSync(configPath, 'utf-8'));
 const LOGIN_URL         = CONFIG.url;
 const USUARIO           = CONFIG.usuario;
 const CLAVE             = CONFIG.clave;
-const MOSTRAR_NAVEGADOR = CONFIG.mostrarNavegador !== false;
+//const MOSTRAR_NAVEGADOR = CONFIG.mostrarNavegador !== false;
+const MOSTRAR_NAVEGADOR = true;
 const IMAGES_DIR        = CONFIG.carpeta; // ya viene como ruta absoluta desde el servidor
 
 // ==================== CONFIGURACIÓN ====================
@@ -166,7 +167,8 @@ test('Automatización: Carga masiva de imágenes SIESAM', async () => {
     .filter(f => f.endsWith('.jpg') || f.endsWith('.png') || f.endsWith('.jpeg'));
 
   log(`📸 ${files.length} imágenes encontradas en: ${IMAGES_DIR}`);
-  log(`🖥️  Navegador: ${MOSTRAR_NAVEGADOR ? 'visible' : 'minimizado'}`);
+  //log(`🖥️  Navegador: ${MOSTRAR_NAVEGADOR ? 'visible' : 'minimizado'}`);
+  log(`🖥️  Navegador: visible`);
   log(`📝 Log: ${LOG_FILE}`);
 
   const progreso    = cargarProgreso();
@@ -175,12 +177,17 @@ test('Automatización: Carga masiva de imágenes SIESAM', async () => {
 
   log(`⏭️  Ya completados: ${completados.size} | 🔜 Pendientes: ${pendientes.length}`);
 
-  const browser = await chromium.launch({
+/*   const browser = await chromium.launch({
   channel: 'chrome',
   headless: false,
   args: MOSTRAR_NAVEGADOR
     ? []
     : ['--window-position=-32000,-32000', '--window-size=1440,900'],
+}); */
+
+const browser = await chromium.launch({
+  channel: 'chrome',
+  headless: false,
 });
 
   let { context, page } = await abrirSesion(browser);
