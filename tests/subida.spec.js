@@ -60,6 +60,10 @@ async function abrirSesion(browser) {
   const context = await browser.newContext();
   const page    = await context.newPage();
 
+  // Aplica zoom del 90% a nivel de página
+  await page.addInitScript(() => {
+    document.documentElement.style.zoom = '0.9';
+  });
   await page.goto(LOGIN_URL);
   await page.getByRole('textbox', { name: 'Seleccione al usuario' }).fill(USUARIO, { timeout: T });
   await page.getByRole('textbox', { name: 'Password' }).fill(CLAVE, { timeout: T });
