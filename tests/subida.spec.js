@@ -175,7 +175,14 @@ test('Automatización: Carga masiva de imágenes SIESAM', async () => {
 
   log(`⏭️  Ya completados: ${completados.size} | 🔜 Pendientes: ${pendientes.length}`);
 
-  const browser = await chromium.launch({ headless: !MOSTRAR_NAVEGADOR });
+  const browser = await chromium.launch({
+  channel: 'chrome',
+  headless: false,
+  args: MOSTRAR_NAVEGADOR
+    ? []
+    : ['--window-position=-32000,-32000', '--window-size=1440,900'],
+});
+
   let { context, page } = await abrirSesion(browser);
 
   let crasheo = false;
